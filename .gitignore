@@ -1,0 +1,23 @@
+# Entornos virtuales de Python
+venv/
+.venv/
+env/
+
+# Caché y archivos temporales de Python
+__pycache__/
+*.py[cod]
+
+# Variables de entorno y credenciales (SEGURIDAD)
+.env
+*.json
+*.pem
+
+# Archivos pesados, logs e historiales
+logs/
+*.log
+dbt_ecommerce/target/
+dbt_ecommerce/dbt_packages/
+
+# Archivos basura del sistema operativo
+.DS_Store
+Thumbs.db
