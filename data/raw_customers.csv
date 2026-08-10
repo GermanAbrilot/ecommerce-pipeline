@@ -1,0 +1,6 @@
+customer_id,first_name,last_name,email,city,signup_date
+101,Juan,Perez,juan.perez@example.com,Santiago,2025-01-15
+102,Maria,Gonzalez,maria.g@example.com,Temuco,2025-02-01
+103,Carlos,Rojas,c.rojas@example.com,Concepcion,2025-02-10
+104,Ana,Silva,ana.silva@example.com,Valparaiso,2025-03-04
+105,Pedro,Soto,p.soto@example.com,Temuco,2025-03-12
