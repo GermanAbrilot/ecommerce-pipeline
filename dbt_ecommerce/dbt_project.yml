@@ -1,0 +1,18 @@
+name: 'dbt_ecommerce'
+version: '1.0.0'
+config-version: 2
+
+profile: 'dbt_ecommerce'
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  dbt_ecommerce:
+    staging:
+      +materialized: view      # La capa staging se crea como VISTAS
+      +schema: staging
+    marts:
+      +materialized: table     # La capa marts se crea como TABLAS
+      +schema: marts

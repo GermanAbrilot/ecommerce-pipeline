@@ -1,0 +1,13 @@
+dbt_ecommerce:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres_dw
+      user: data_engineer
+      # Lee la contraseña de la variable de entorno del contenedor en tiempo de ejecución
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
+      port: 5432
+      dbname: ecommerce_dw
+      schema: analytics
+      threads: 4

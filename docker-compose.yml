@@ -26,6 +26,9 @@ services:
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - POSTGRES_USER=${POSTGRES_USER:-data_engineer}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-data_password}
+      - POSTGRES_DB=${POSTGRES_DB:-ecommerce_dw}
     ports:
       - "8080:8080"
     volumes:
