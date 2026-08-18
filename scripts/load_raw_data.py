@@ -22,10 +22,10 @@ def get_engine():
 
 def create_raw_schema(engine):
     """Garantiza la existencia del esquema 'raw' en el Data Warehouse."""
-    with engine.connect() as connection:
+    # engine.begin() gestiona la transacción y hace COMMIT automático
+    with engine.begin() as connection:
         connection.execute(text("CREATE SCHEMA IF NOT EXISTS raw;"))
-        connection.commit()
-        print("Schema 'raw' verificado/creado con éxito.")
+    print("Schema 'raw' verificado/creado con éxito.")
 
 def ingest_csv_to_raw(file_name, table_name, engine):
     """Lee un CSV de la carpeta data y lo carga en la tabla especificada del esquema raw."""

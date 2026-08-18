@@ -26,6 +26,8 @@ services:
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - POSTGRES_HOST=postgres_dw
+      - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER:-data_engineer}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-data_password}
       - POSTGRES_DB=${POSTGRES_DB:-ecommerce_dw}
