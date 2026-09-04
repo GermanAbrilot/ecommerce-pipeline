@@ -1,4 +1,4 @@
-# E-Commerce End-to-End Data Engineering Pipeline
+#  E-Commerce End-to-End Data Engineering Pipeline
 
 ![Data Engineering](https://img.shields.io/badge/Domain-Data_Engineering-blue)
 ![Python](https://img.shields.io/badge/Python-3.10-yellow)
@@ -7,35 +7,35 @@
 ![Apache Airflow](https://img.shields.io/badge/Apache_Airflow-2.8-teal)
 ![Docker](https://img.shields.io/badge/Docker_Compose-Supported-blue)
 
-End-to-end **Data Engineering pipeline** diseñado para ingerir, transformar, validar y orquestar datos transaccionales de una plataforma de E-Commerce.
+End-to-end **Data Engineering pipeline** diseñado para ingerir, transformar, validar y orquestar datos transaccionales de una plataforma de E-Commerce a escala.
 
-El proyecto implementa una arquitectura por capas basada en el enfoque **Medallion Architecture**, utilizando **PostgreSQL como Data Warehouse**, **Python para la ingesta**, **dbt para transformación y calidad de datos** y **Apache Airflow para la orquestación**.
+El proyecto implementa una arquitectura por capas basada en el enfoque **Medallion Architecture**, utilizando **PostgreSQL como Data Warehouse**, **Python con Faker para simulación de datos masivos**, **dbt para transformación y calidad de datos** y **Apache Airflow para la orquestación**.
 
 La capa analítica se estructura mediante un **Star Schema**, preparando los datos para consumo analítico y herramientas de Business Intelligence (BI).
 
 ---
 
-##  Objetivo del Proyecto
+## Objetivo del Proyecto
 
-Simular un pipeline de datos utilizado en un entorno productivo de E-Commerce, cubriendo las principales etapas de un flujo moderno de ingeniería de datos:
+Simular un pipeline de datos utilizado en un entorno productivo de E-Commerce, cubriendo los desafíos reales de la ingeniería de datos moderna:
 
-- Ingesta de datos desde archivos CSV.
-- Almacenamiento de datos en una capa RAW.
-- Limpieza y estandarización mediante dbt.
-- Transformación de datos transaccionales en modelos analíticos.
-- Implementación de un modelo dimensional Star Schema.
-- Validación automática de calidad de datos.
-- Orquestación del pipeline mediante Apache Airflow.
-- Containerización de la infraestructura mediante Docker.
-- Reproducibilidad del entorno de desarrollo.
+* Generación y procesamiento de volúmenes masivos de datos sintéticos (500,000+ registros).
+* Ingesta optimizada mediante control de memoria RAM (*Chunking*).
+* Almacenamiento de datos en una capa RAW con diseño idempotente.
+* Limpieza, estandarización y modelado dimensional (Star Schema) mediante dbt.
+* Validación automática de calidad de datos (*dbt Tests*).
+* Orquestación robusta del pipeline mediante Apache Airflow.
+* Containerización completa de la infraestructura mediante Docker Compose.
+
 ---
-#  Estructura del Proyecto
+
+##  Estructura del Proyecto
 
 ```text
 ecommerce-pipeline/
 │
 ├── dags/
-│   └── ecommerce_pipeline.py
+│   └── ecommerce_etl_dag.py
 │
 ├── dbt_ecommerce/
 │   ├── models/
@@ -48,397 +48,167 @@ ecommerce-pipeline/
 │   └── profiles.yml
 │
 ├── scripts/
+│   ├── generate_fake_data.py
 │   └── load_raw_data.py
 │
 ├── data/
-│   └── *.csv
+│   └── raw_transactions.csv
 │
 ├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
 └── README.md
+
 ```
 
 ---
 
-#  Arquitectura
+## Arquitectura
 
 ```text
-                    ┌──────────────────────┐
-                    │     Fuentes CSV      │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                     ┌──────────────────┐
-                     │ Python / Pandas  │
-                     │    SQLAlchemy    │
-                     └────────┬─────────┘
+                 ┌──────────────────────┐
+                 │    Faker (Python)    │
+                 │  500,000 Transactions│
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────┐
+                 │ Python / Pandas  │
+                 │ Chunked Ingestion│
+                 └────────┬─────────┘
+                          │
+                          ▼
+             ┌──────────────────────────────┐
+             │         RAW Layer            │
+             │         PostgreSQL           │
+             │         Schema: raw          │
+             └──────────────┬───────────────┘
+                            │
+                            ▼
+                     ┌─────────────────┐
+                     │    dbt / SQL    │
+                     │ Transformations │
+                     └────────┬────────┘
                               │
                               ▼
-              ┌──────────────────────────────┐
-              │        RAW Layer             │
-              │        PostgreSQL            │
-              │        Schema: raw           │
-              └──────────────┬───────────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │   dbt / SQL     │
-                    │ Transformations │
-                    └────────┬────────┘
-                             │
-                             ▼
-              ┌──────────────────────────────┐
-              │       STAGING Layer          │
-              │        PostgreSQL            │
-              │      Schema: staging        │
-              └──────────────┬───────────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │   dbt / Jinja   │
-                    │ Dimensional SQL │
-                    └────────┬────────┘
-                             │
-                             ▼
-              ┌──────────────────────────────┐
-              │        MARTS Layer           │
-              │        PostgreSQL            │
-              │      Schema: analytics       │
-              │                              │
-              │        Star Schema            │
-              └──────────────────────────────┘
+             ┌──────────────────────────────┐
+             │        STAGING Layer         │
+             │          PostgreSQL          │
+             │       Schema: staging        │
+             └──────────────┬───────────────┘
+                            │
+                            ▼
+                     ┌─────────────────┐
+                     │   dbt / Jinja   │
+                     │ Dimensional SQL │
+                     └────────┬────────┘
+                              │
+                              ▼
+             ┌──────────────────────────────┐
+             │         MARTS Layer          │
+             │          PostgreSQL          │
+             │      Schema: analytics       │
+             │                              │
+             │         Star Schema          │
+             └──────────────────────────────┘
 
-                             ▲
-                             │
-                    ┌────────┴────────┐
-                    │  Apache Airflow │
-                    │   DAG Workflow  │
-                    └─────────────────┘
-````
+                            ▲
+                            │
+                     ┌──────┴──────────┐
+                     │ Apache Airflow  │
+                     │   DAG Workflow  │
+                     └─────────────────┘
 
-### Data Flow
-
-```text
-CSV
- │
- ▼
-Python Ingestion
- │
- ▼
-PostgreSQL RAW
- │
- ▼
-dbt Staging
- │
- ▼
-dbt Marts
- │
- ▼
-Analytics / BI
-```
-
-Apache Airflow coordina la ejecución de las diferentes etapas y sus dependencias.
-
----
-
-# Stack Tecnológico
-
-| Tecnología             | Uso                                        |
-| ---------------------- | ------------------------------------------ |
-| **Python 3.10**        | Ingesta y procesamiento de datos           |
-| **Pandas**             | Manipulación y preparación de datos        |
-| **SQLAlchemy**         | Conexión y operaciones con PostgreSQL      |
-| **PostgreSQL 15**      | Data Warehouse                             |
-| **dbt Core**           | Transformaciones, modelado y testing       |
-| **SQL**                | Transformación y modelado de datos         |
-| **Jinja**              | Templates y reutilización de lógica en dbt |
-| **Apache Airflow 2.8** | Orquestación del pipeline                  |
-| **Docker**             | Containerización                           |
-| **Docker Compose**     | Gestión de servicios                       |
-| **Git / GitHub**       | Control de versiones                       |
-
----
-
-#  Arquitectura de Datos
-
-El proyecto utiliza una arquitectura de tres capas:
-
-## 1. RAW Layer
-
-Contiene los datos ingeridos desde las fuentes originales con transformaciones mínimas.
-
-```text
-PostgreSQL
-└── raw
-    ├── customers
-    ├── products
-    ├── orders
-    └── order_items
-```
-
-El objetivo de esta capa es conservar una representación cercana a los datos originales y servir como punto de entrada para las transformaciones posteriores.
-
----
-
-## 2. STAGING Layer
-
-La capa staging utiliza **dbt** para limpiar, estandarizar y preparar los datos para el modelado analítico.
-
-Principales transformaciones:
-
-* Estandarización de nombres de columnas.
-* Conversión de tipos de datos.
-* Tratamiento de valores nulos.
-* Limpieza de datos.
-* Preparación de relaciones entre entidades.
-* Cálculo de campos derivados cuando corresponde.
-
-```text
-PostgreSQL
-└── staging
-    ├── stg_customers
-    ├── stg_products
-    ├── stg_orders
-    └── stg_order_items
 ```
 
 ---
 
-## 3. MARTS / ANALYTICS Layer
+##  Simulación de Datos Masivos & Rendimiento
 
-La capa final contiene modelos orientados al análisis y consumo de información.
+Para validar el comportamiento del pipeline ante escenarios de alto volumen, el proyecto incorpora un script generador basado en **Faker** capaz de simular **500,000 registros transaccionales**.
 
-Los modelos se organizan utilizando un **Star Schema**, separando hechos y dimensiones.
-
-```text
-PostgreSQL
-└── analytics
-    ├── fct_orders
-    ├── dim_customers
-    └── dim_products
-```
+* **Optimización de Memoria:** La ingesta masiva implementa lectura y escritura por bloques (*chunks* de 10,000 a 50,000 filas) utilizando Pandas, evitando la saturación de la memoria RAM del contenedor.
+* **Idempotencia:** El script de ingesta automatiza la limpieza previa de tablas (`DROP TABLE IF EXISTS`) antes de cada carga por lotes, garantizando que reejecuciones del DAG no generen registros duplicados.
 
 ---
 
-#  Modelo Dimensional — Star Schema
+##  Stack Tecnológico
 
-El modelo dimensional transforma los datos transaccionales en estructuras optimizadas para análisis.
-
-### Fact Table
-
-#### `fct_orders`
-
-Tabla de hechos que consolida información relacionada con los pedidos.
-
-Incluye métricas y atributos como:
-
-* Monto total de la orden.
-* Cantidad total de ítems.
-* Estado del pedido.
-* Identificador del cliente.
-* Fecha del pedido.
-
-### Dimension Tables
-
-#### `dim_customers`
-
-Contiene atributos descriptivos de los clientes:
-
-* Identificador del cliente.
-* Nombre.
-* Ubicación.
-* Fecha de registro.
-
-#### `dim_products`
-
-Contiene información descriptiva del catálogo:
-
-* Identificador del producto.
-* Nombre.
-* Categoría.
-* Precio unitario.
+| Tecnología | Uso |
+| --- | --- |
+| **Python 3.10** | Generación sintética y procesamiento de datos |
+| **Faker** | Simulación de transacciones y perfiles de usuarios |
+| **Pandas / SQLAlchemy** | Manipulación por lotes y operaciones con PostgreSQL |
+| **PostgreSQL 15** | Data Warehouse relacional |
+| **dbt Core** | Transformaciones, modelado modular y testing |
+| **SQL / Jinja** | Transformación analítica y plantillas dinámicas |
+| **Apache Airflow 2.8** | Orquestación y gestión de dependencias del DAG |
+| **Docker / Compose** | Containerización y aislamiento de entornos |
+| **Git / GitHub** | Control de versiones (Feature Branch Workflow) |
 
 ---
 
-#  Orquestación
+##  Guía de Ejecución Local
 
-**Apache Airflow** se utiliza para coordinar las diferentes etapas del pipeline mediante un DAG.
+### Requisitos Previos
 
-Flujo conceptual:
-
-```text
-Start
-  │
-  ▼
-Ingest CSV Data
-  │
-  ▼
-Load RAW Data
-  │
-  ▼
-Run dbt Models
-  │
-  ▼
-Run dbt Tests
-  │
-  ▼
-Pipeline Completed
-```
-
-El objetivo es centralizar la ejecución del pipeline y establecer dependencias entre las distintas tareas.
+* Docker Desktop instalado y en ejecución.
+* Git.
 
 ---
 
-#  Data Quality
-
-La calidad de los datos se valida utilizando **dbt Tests**.
-
-Entre las validaciones implementadas se encuentran:
-
-* `unique`
-* `not_null`
-* Integridad referencial mediante relaciones entre modelos.
-* Validación de claves primarias y relaciones entre entidades.
-
-Estas pruebas permiten detectar problemas de calidad antes de que los datos lleguen a la capa analítica.
-
----
-
-#  Infraestructura
-
-El proyecto utiliza **Docker Compose** para reproducir el entorno de ejecución local.
-
-Los principales servicios son:
-
-```text
-Docker Compose
-│
-├── PostgreSQL
-│   └── Data Warehouse
-│
-└── Apache Airflow
-    └── Pipeline Orchestration
-```
-
-Esto permite evitar configuraciones manuales diferentes entre entornos y facilita la ejecución del proyecto.
-
----
-
-# 🚀 Ejecución Local
-
-## Requisitos
-
-Antes de ejecutar el proyecto es necesario tener instalado:
-
-* Docker Desktop
-* Git
-
-Docker Desktop debe estar ejecutándose.
-
----
-
-## 1. Clonar el repositorio
+### 1. Clonar el repositorio y cambiar a la rama de desarrollo
 
 ```bash
-git clone https://github.com/GermanMundaca/ecommerce-pipeline.git
+git clone [https://github.com/GermanAbrilot/ecommerce-pipeline.git](https://github.com/GermanAbrilot/ecommerce-pipeline.git)
 cd ecommerce-pipeline
+git checkout -b feature/data-generator-500k
+
 ```
 
-## 2. Configurar variables de entorno
-
-Crear el archivo `.env` a partir de `.env.example`:
+### 2. Configurar variables de entorno
 
 ```bash
 cp .env.example .env
+
 ```
 
-Configurar las variables necesarias de acuerdo con el entorno local.
-
----
-
-## 3. Levantar la infraestructura
+### 3. Levantar la infraestructura con Docker
 
 ```bash
-docker compose up -d
+docker compose up -d --build
+
 ```
 
-Verificar que los contenedores estén ejecutándose:
+### 4. Generar datos masivos e iniciar el flujo en Airflow
+
+1. Abrir la interfaz web de Airflow en: `http://localhost:8080` (Credenciales: `admin` / contraseña generada o asignada).
+2. El DAG `ecommerce_end_to_end_pipeline` ejecutará automáticamente:
+* **Generación de 500k registros** mediante `generate_fake_data.py`.
+* **Carga masiva por lotes** a la capa RAW mediante `load_raw_data.py`.
+* **Transformaciones y modelado** en Staging y Marts con `dbt run`.
+* **Validación de calidad** con `dbt test`.
+
+
+
+---
+
+##  Pruebas de Calidad de Datos (dbt Tests)
+
+Las pruebas automáticas garantizan la integridad analítica del modelo:
 
 ```bash
-docker compose ps
+docker exec -it airflow_standalone dbt test --project-dir /opt/airflow/dbt_ecommerce --profiles-dir /opt/airflow/dbt_ecommerce
+
 ```
 
 ---
 
-## 4. Acceder a Airflow
+##  Autor
 
-Abrir:
+* **Germán Abrilot**
+* [GitHub Profile](https://www.google.com/search?q=https://github.com/GermanAbrilot)
+* [LinkedIn](https://www.linkedin.com/in/german-dev/)
 
-```text
-http://localhost:8080
-```
-
-Desde la interfaz de Airflow:
-
-1. Localizar el DAG `ecommerce_end_to_end_pipeline`.
-2. Activarlo.
-3. Ejecutar `Trigger DAG`.
-4. Revisar el estado de las tareas.
-5. Verificar la ejecución de los modelos y tests.
-
----
-
-# 🧪 Ejecutar Tests de dbt
-
-Los tests pueden ejecutarse dentro del entorno de Airflow utilizando:
-
-```bash
-docker exec -it airflow_standalone dbt test --project-dir /opt/airflow/dbt_ecommerce
-```
-
-> El nombre del contenedor y la ruta del proyecto deben coincidir con la configuración definida en `docker-compose.yml`.
-
----
-
-
-
----
-
-# 🔍 Principales Conceptos Demostrados
-
-Este proyecto demuestra experiencia práctica con conceptos fundamentales de Data Engineering:
-
-* ETL / ELT Pipelines
-* Data Warehouse
-* Medallion Architecture
-* Data Ingestion
-* Data Transformation
-* Data Modeling
-* Star Schema
-* Fact & Dimension Tables
-* SQL
-* Python
-* dbt
-* Data Quality
-* Data Testing
-* Workflow Orchestration
-* Apache Airflow
-* Docker
-* PostgreSQL
-* Git / GitHub
-
----
-
-
-#  Autor
-
-**Germán Mundaca**
-
-Ingeniero en Informática | Data Engineering
-
-[GitHub](https://github.com/GermanMundaca)
-
-[LinkedIn](https://www.linkedin.com/in/german-dev/)
 
