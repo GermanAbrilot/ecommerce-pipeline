@@ -22,37 +22,50 @@ def get_engine():
 
 def create_raw_schema(engine):
     """Garantiza la existencia del esquema 'raw' en el Data Warehouse."""
-    # engine.begin() gestiona la transacción y hace COMMIT automático
     with engine.begin() as connection:
         connection.execute(text("CREATE SCHEMA IF NOT EXISTS raw;"))
     print("Schema 'raw' verificado/creado con éxito.")
 
-def ingest_csv_to_raw(file_name, table_name, engine):
-    """Lee un CSV de la carpeta data y lo carga en la tabla especificada del esquema raw."""
+def ingest_csv_to_raw(file_name, table_name, engine, chunk_size=50000):
+    """Lee un CSV masivo por lotes y lo carga en la tabla del esquema raw protegiendo la RAM."""
     file_path = os.path.join("data", file_name)
     
     if not os.path.exists(file_path):
         print(f"Error: El archivo {file_path} no existe.")
         return
 
-    # Leer CSV con Pandas
-    df = pd.read_csv(file_path)
+    print(f"Iniciando ingesta masiva de '{file_name}' en 'raw.{table_name}'...")
     
-    # Agregar columna de auditoría/trazabilidad (Metadata essential in DE)
-    df["_ingested_at"] = datetime.now()
+    try:
+        first_chunk = True
+        # Leer el CSV en bloques
+        for chunk in pd.read_csv(file_path, chunksize=chunk_size):
+            
+            # Agregar columna de auditoría/trazabilidad al lote actual
+            chunk["_ingested_at"] = datetime.now()
 
-    # Ingestar en la base de datos (Estrategia: Replace para asegurar Idempotencia)
-    df.to_sql(
-        name=table_name,
-        con=engine,
-        schema="raw",
-        if_exists="replace",
-        index=False
-    )
-    print(f"Tabla 'raw.{table_name}' ingestada correctamente ({len(df)} registros).")
+            # El primer lote reemplaza la tabla (limpia datos viejos), los siguientes hacen append
+            mode = "replace" if first_chunk else "append"
+            
+            chunk.to_sql(
+                name=table_name,
+                con=engine,
+                schema="raw",
+                if_exists=mode,
+                index=False
+            )
+            
+            first_chunk = False
+            print(f"Lote procesado para la tabla 'raw.{table_name}'...")
+
+        print(f"Tabla 'raw.{table_name}' ingestada correctamente por completo.")
+        
+    except Exception as e:
+        print(f"Error crítico al procesar {file_name}: {e}")
+        raise
 
 def main():
-    print("Iniciando proceso de ingesta en la Capa RAW...")
+    print("Iniciando proceso de ingesta masiva en la Capa RAW...")
     engine = get_engine()
     create_raw_schema(engine)
 
@@ -67,7 +80,7 @@ def main():
     for file_name, table_name in files_to_ingest:
         ingest_csv_to_raw(file_name, table_name, engine)
 
-    print("Proceso de ingesta completado exitosamente.")
+    print("Proceso de ingesta masiva completado exitosamente.")
 
 if __name__ == "__main__":
     main()

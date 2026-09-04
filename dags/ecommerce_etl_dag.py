@@ -22,7 +22,12 @@ with DAG(
     catchup=False,                           # No ejecuta fechas pasadas acumuladas
     tags=['ecommerce', 'dbt', 'postgres', 'portfolio'],
 ) as dag:
-
+    
+    # NUEVA TAREA: Generar medio millón de registros falsos
+    task_generate_data = BashOperator(
+        task_id='generate_fake_transactions',
+        bash_command='python /opt/airflow/scripts/generate_fake_data.py'
+    )
     # Tarea 1: Ingesta de datos crudos (Python Script)
     task_ingest_raw = BashOperator(
         task_id='ingest_raw_data',
